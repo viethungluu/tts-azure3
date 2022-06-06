@@ -92,6 +92,13 @@ def _chunk_text(text: str,
 def synthesize_speech(request):
     basename = str(uuid.uuid4())
 
+    tempdir = os.path.join(gettempdir(), basename)
+    try: 
+        os.mkdir(tempdir) 
+    except OSError as e:
+        logging.error(e)
+        return None, 500
+
     speech_config = speechsdk.SpeechConfig(subscription=os.getenv('AzureSubcription'), region=os.getenv('AzureRegion'))
     speech_config.set_speech_synthesis_output_format(speechsdk.SpeechSynthesisOutputFormat.Audio24Khz48KBitRateMonoMp3)
 
@@ -124,7 +131,7 @@ def synthesize_speech(request):
     for i, segment in enumerate(text_blocks):
         ssml = _textToSsml(segment, lang_code, voice_id, pitch, rate, volume)
         
-        file_config = speechsdk.audio.AudioOutputConfig(filename=os.path.join(gettempdir(), "{0}_{1}.mp3".format(basename, i)))
+        file_config = speechsdk.audio.AudioOutputConfig(filename=os.path.join(tempdir, "{0}.mp3".format(i)))
         synthesizer = speechsdk.SpeechSynthesizer(speech_config=speech_config, audio_config=file_config)
 
         result = synthesizer.speak_ssml(ssml)
@@ -138,13 +145,13 @@ def synthesize_speech(request):
     try:
         streams = []
         for i in range(len(text_blocks)):
-            streams.append(ffmpeg.input(os.path.join(gettempdir(), "{0}_{1}.mp3".format(basename, i))))
-        ffmpeg.concat(*streams, v=0, a=1).output(os.path.join(gettempdir(), "{0}.wav".format(basename))).run()
+            streams.append(ffmpeg.input(os.path.join(tempdir, "{0}.mp3".format(i))))
+        ffmpeg.concat(*streams, v=0, a=1).output(os.path.join(tempdir, "audio.wav")).run()
     except ffmpeg.Error as e:
         logging.error(e)
     
     try:
-        _upload_blob(os.getenv('CloudBucket'), os.path.join(gettempdir(), "{0}.wav".format(basename)), "{0}.wav".format(basename))
+        _upload_blob(os.getenv('CloudBucket'), os.path.join(tempdir, "audio.wav"), "{0}.wav".format(basename))
     except Exception as e:
         logging.error(e)
         return None, 500
