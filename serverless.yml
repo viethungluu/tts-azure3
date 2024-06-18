@@ -10,7 +10,7 @@ provider:
   # https://serverless.com/framework/docs/providers/google/guide/credentials/
   #
   # the path to the credentials file needs to be absolute
-  credentials: D:\voiceover\credentials\gcp_credentials.json
+  credentials: YOUR_CREDENTIALS_PATH
 
 frameworkVersion: '3'
 plugins:
@@ -32,7 +32,7 @@ functions:
     events:
       - http: path
     environment:
-      AzureSubcription: c219f58e76e8456483d07205992e4123
+      AzureSubcription: YOUR_AZURE_SUBSCRIPTION
       AzureRegion: southeastasia
       CloudBucket: voiceovertom
   # NOTE: the following uses an "event" event (pubSub event in this case).
